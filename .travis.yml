@@ -1,0 +1,6 @@
+language: go
+dist: xenial
+
+matrix:
+  - dist: xenial
+    go: "1.12"
