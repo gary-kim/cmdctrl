@@ -9,7 +9,7 @@ import (
 
 // Root is cmdctrl's root command
 var Root = &cobra.Command{
-	Use: "cmdctrl",
+	Use:   "cmdctrl",
 	Short: "cmdctrl is a very simple device management system",
 	Long: `cmdctrl is a very simple device management system
 
