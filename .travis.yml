@@ -1,5 +1,6 @@
 language: go
 dist: xenial
+before_install: GO111MODULE=on
 
 matrix:
   - dist: xenial
