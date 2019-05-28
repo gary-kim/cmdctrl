@@ -2,9 +2,10 @@ language: go
 dist: xenial
 
 matrix:
-  - go: "1.12.x"
-    env:
-      - GO111MODULE=on
-  - go: master
-    env:
-      - Go111MODULE=on
+  include:
+    - go: "1.12.x"
+      env:
+        - GO111MODULE=on
+    - go: master
+      env:
+        - Go111MODULE=on
