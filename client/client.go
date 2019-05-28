@@ -1,16 +1,19 @@
 package client
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net"
 	"net/http"
 	"net/url"
 	"time"
 
+	"github.com/gary-kim/cmdctrl/cmd"
 	"github.com/gary-kim/cmdctrl/shared"
 	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
 )
 
 // RemoteRESTServer represents a single cmdctrl server that this client is configured to connect to in REST Mode
@@ -49,29 +52,73 @@ func RunClient(addr string, opt Options) {
 	primaryServer.run()
 }
 
-func (s RemoteRESTServer) queryCommand() (shared.PendingAction, error) {
-	errReturn := shared.PendingAction{}
-	res, err := http.PostForm(s.addr, url.Values{"client": {s.clientID}, "q": {"RequestedAction"}})
+// query will query the cmdctrl server with the given url.Values. It can also be given an int for an expected status code. If the expected status code is -1, it will ignore the status code.
+func (s RemoteRESTServer) query(query url.Values, status int) (*shared.Message, error) {
+	tr := shared.Message{}
+	res, err := http.PostForm(s.addr, query)
 	if err != nil {
-		return errReturn, err
+		return nil, err
 	}
 	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		return errReturn, errors.New("Query for command did not return status code 200")
+	if status != -1 && res.StatusCode != status {
+		return nil, errors.New("Unexpected http status code")
 	}
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return errReturn, err
+		return nil, err
 	}
-	pa := shared.PendingAction{}
-	err = pa.FromJSON(body)
+	err = json.Unmarshal(body, &tr)
 	if err != nil {
-		return errReturn, err
+		return nil, err
+	}
+	if shared.Compatible(cmd.Version, tr.Version) {
+		return nil, errors.New("Server and client versions are incompatible")
+	}
+	return &tr, nil
+}
+
+func (s RemoteRESTServer) queryCommand() (*shared.PendingAction, error) {
+	pa := &shared.PendingAction{}
+	queryReturn, err := s.query(url.Values{"client": {s.clientID}, "q": {"RequestedAction"}}, 200)
+	if err != nil {
+		return pa, err
+	}
+	if queryReturn.Success != true {
+		return pa, errors.New("Server unsuccessful")
+	}
+	if queryReturn.Action == "NoAction" {
+		return pa, nil
+	}
+	if queryReturn.Action == "PendingAction" {
+		return &queryReturn.PendingAction, nil
 	}
 	return pa, nil
 }
 
+// registerclient will create a client id and register the client id with the server
+func (s RemoteRESTServer) registerClient() error {
+	possibleLetters := []byte("123567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	randomB := rand.Perm(len(possibleLetters))
+	for _, curr := range randomB {
+		s.clientID += string(possibleLetters[curr])
+	}
+
+	// register with server
+	res, err := s.query(url.Values{"client": {s.clientID}, "q": {"RegisterClient"}}, 200)
+	if err != nil {
+		return err
+	}
+	if !res.Success || res.Action != "ClientRegistered" {
+		return errors.New("Could not register client")
+	}
+	return nil
+}
+
 func (s RemoteRESTServer) run() {
+	err := s.registerClient()
+	if err != nil {
+		fmt.Println(errors.Wrap(err, "Failed to register client"))
+	}
 	for {
 		pa, err := s.queryCommand()
 		if err != nil {
