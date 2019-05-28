@@ -1,7 +1,10 @@
 language: go
 dist: xenial
-before_install: GO111MODULE=on
 
 matrix:
-  - dist: xenial
-    go: "1.12"
+  - go: "1.12.x"
+    env:
+      - GO111MODULE=on
+  - go: master
+    env:
+      - Go111MODULE=on

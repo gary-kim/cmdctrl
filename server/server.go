@@ -23,12 +23,12 @@ type Options struct {
 
 // AddToQueue adds the given PendingAction onto the Queue
 func (c client) AddToQueue(pa shared.PendingAction) error {
-	c.queue = append(c.queue, pa)
+	c.queue.Put(&pa)
 	return nil
 }
 
 // RunServer starts the cmdctrl server
-func RunServer(addr string, opt Options) {
+func Run(addr string, opt Options) {
 	// start the server
 
 }
@@ -66,12 +66,12 @@ func handle(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			http.Error(w, "Failed to find job for client", http.StatusInternalServerError)
 		}
-		forClient.PendingAction = pendingAction[0]
+		forClient.PendingAction = pendingAction[0].(shared.PendingAction)
 
 	}
 }
 
-func getClient(clientID string) (client, error) {
+func getClient(clientID string) (*client, error) {
 	for _, curr := range clients {
 		if curr.clientID == clientID {
 			return curr, nil

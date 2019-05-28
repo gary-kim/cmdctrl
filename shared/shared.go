@@ -5,6 +5,8 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+
+	"github.com/golang-collections/go-datastructures/queue"
 )
 
 // PendingAction represents a action requested of a client
@@ -55,8 +57,8 @@ func (p PendingAction) Run() error {
 }
 
 // Compare compares the priorities of the PendingActions
-func (p PendingAction) Compare(other PendingAction) int {
-	return p.priority - other.priority
+func (p PendingAction) Compare(other queue.Item) int {
+	return p.priority - other.(PendingAction).priority
 }
 
 // Compatible returns whether the server and client versions are Compatible
