@@ -68,6 +68,7 @@ func (s RemoteRESTServer) query(query url.Values, status int) (*shared.Message, 
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println(body)
 	err = json.Unmarshal(body, &tr)
 	if err != nil {
 		return nil, err

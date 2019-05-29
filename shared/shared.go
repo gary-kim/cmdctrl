@@ -12,13 +12,13 @@ import (
 // PendingAction represents a action requested of a client
 type PendingAction struct {
 	// This action requires special attention from cmdctrl
-	cmdctrlspec bool
+	Cmdctrlspec bool
 	// This is the command to be run
-	cmd string
+	Cmd string
 	// This is the arguments with which to run the cmd command with
-	args []string
+	Args []string
 	// This is the priority of the PendingAction
-	priority int
+	Priority int
 }
 
 // Message represents a message between the server and client
@@ -48,8 +48,8 @@ func (p PendingAction) FromJSON(input []byte) error {
 
 // Run runs the PendingAction
 func (p PendingAction) Run() error {
-	if !p.cmdctrlspec {
-		cmd := exec.Command(p.cmd, p.args...)
+	if !p.Cmdctrlspec {
+		cmd := exec.Command(p.Cmd, p.Args...)
 		cmd.Run()
 		return nil
 	}
@@ -58,7 +58,7 @@ func (p PendingAction) Run() error {
 
 // Compare compares the priorities of the PendingActions
 func (p PendingAction) Compare(other queue.Item) int {
-	return p.priority - other.(PendingAction).priority
+	return p.Priority - other.(PendingAction).Priority
 }
 
 // Compatible returns whether the server and client versions are Compatible

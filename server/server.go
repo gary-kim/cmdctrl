@@ -56,7 +56,6 @@ func handle(w http.ResponseWriter, r *http.Request) {
 	switch r.FormValue("q") {
 	case "RegisterClient":
 		clients = append(clients, &client{clientID: clientID, queue: queue.NewPriorityQueue(1)})
-		
 		forClient.Action = "ClientRegistered"
 		forClient.Success = true
 		sendToClient(forClient, w)
@@ -66,7 +65,13 @@ func handle(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			http.Error(w, "Cannot find client", http.StatusInternalServerError)
 			return
-		}
+		}		
+		currentClient.queue.Put(shared.PendingAction{
+			Cmd: "notify-send",
+			Priority: 1,
+			Args: []string{"cmdctrl", "Complete"},
+			Cmdctrlspec: false,
+		})
 		if currentClient.queue.Empty() {
 			forClient.Action = "NoAction"
 			forClient.Success = true
@@ -77,7 +82,10 @@ func handle(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			http.Error(w, "Failed to find job for client", http.StatusInternalServerError)
 		}
+		forClient.Action = "PendingAction"
 		forClient.PendingAction = pendingAction[0].(shared.PendingAction)
+		forClient.Success = true
+		sendToClient(forClient, w)
 
 	}
 }
