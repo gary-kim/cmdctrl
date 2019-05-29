@@ -7,6 +7,8 @@ import (
 )
 
 func init() {
+	address := "localhost:80"
+	sharedPass := ""
 	serverCmd := &cobra.Command{
 		Use:   "server",
 		Short: "Run cmdctrl in server mode",
@@ -17,10 +19,12 @@ running on a central server. Clients will connect
 to this system to recieve commands`,
 		Run: func(command *cobra.Command, args []string) {
 			opt := server.Options{
-
+				SharedPass: sharedPass,
 			}
-			server.Run("", opt)
+			server.RunServer(address, opt)
 		},
 	}
 	cmd.Root.AddCommand(serverCmd)
+	serverCmd.PersistentFlags().StringVar(&address, "addr", "localhost:80", "Indicates the address you would like the cmdctrl server to bind to")
+	serverCmd.PersistentFlags().StringVar(&sharedPass, "shared-pass", "", "A shared pass for the server and client. Must be the same between the server and client. This is used by the client to authenticate the server.")
 }

@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/gary-kim/cmdctrl/cmd"
@@ -20,6 +21,7 @@ import (
 type RemoteRESTServer struct {
 	addr     string
 	clientID string
+	opt      Options
 	conn     *net.Conn
 }
 
@@ -27,6 +29,7 @@ type RemoteRESTServer struct {
 type RemoteWSServer struct {
 	addr     string
 	clientID string
+	opt      Options
 	conn     *websocket.Conn
 }
 
@@ -37,7 +40,9 @@ type RemoteServer interface {
 
 // Options represents the options given by the user when cmdctrl was started in client mode
 type Options struct {
-	RESTMode bool
+	RESTMode           bool
+	RESTUpdateInterval int
+	SharedPass         string
 }
 
 var primaryServer RemoteRESTServer
@@ -47,6 +52,7 @@ func RunClient(addr string, opt Options) {
 	if opt.RESTMode {
 		primaryServer = RemoteRESTServer{
 			addr: addr,
+			opt:  opt,
 		}
 	}
 	primaryServer.run()
@@ -68,7 +74,6 @@ func (s RemoteRESTServer) query(query url.Values, status int) (*shared.Message, 
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(body)
 	err = json.Unmarshal(body, &tr)
 	if err != nil {
 		return nil, err
@@ -76,9 +81,13 @@ func (s RemoteRESTServer) query(query url.Values, status int) (*shared.Message, 
 	if !shared.Compatible(cmd.Version, tr.Version) {
 		return nil, errors.New("Server and client versions are incompatible")
 	}
+	if s.opt.SharedPass != tr.SharedPass {
+		return nil, errors.New("Cannot verify server identity")
+	}
 	return &tr, nil
 }
 
+// queryCommand querys the server for new PendingAction(s)
 func (s RemoteRESTServer) queryCommand() (*shared.PendingAction, error) {
 	pa := &shared.PendingAction{}
 	queryReturn, err := s.query(url.Values{"q": {"RequestedAction"}}, 200)
@@ -100,9 +109,8 @@ func (s RemoteRESTServer) queryCommand() (*shared.PendingAction, error) {
 // registerclient will create a client id and register the client id with the server
 func (s *RemoteRESTServer) registerClient() error {
 	possibleLetters := []byte("123567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-	randomB := rand.Perm(len(possibleLetters))
-	for _, curr := range randomB {
-		s.clientID += string(possibleLetters[curr])
+	for i := 0; i < 20; i++ {
+		s.clientID += string(possibleLetters[rand.Intn(len(possibleLetters))])
 	}
 
 	// register with server
@@ -122,6 +130,7 @@ func (s RemoteRESTServer) run() {
 		fmt.Println(errors.Wrap(err, "Failed to register client"))
 		return
 	}
+	fmt.Printf("Client successfully registered with ID: %s\n", s.clientID)
 	time.Sleep(1 * time.Second)
 	for {
 		pa, err := s.queryCommand()
@@ -129,10 +138,19 @@ func (s RemoteRESTServer) run() {
 			fmt.Printf("Could not query for command from server: %s", err)
 		}
 		pa.Run()
-		time.Sleep(60 * time.Second)
+
+		duration, err := time.ParseDuration(strconv.Itoa(s.opt.RESTUpdateInterval) + "s")
+		if err != nil {
+			fmt.Printf("Could not parse time duration %s", string(s.opt.RESTUpdateInterval)+"s")
+		}
+		time.Sleep(duration)
 	}
 }
 
 func (s RemoteWSServer) run() {
 	return
+}
+
+func (s RemoteRESTServer) verifySharedPass(pass string) bool {
+	return s.opt.SharedPass == pass
 }

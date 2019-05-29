@@ -29,6 +29,7 @@ type Message struct {
 	Success       bool
 	Action        string
 	PendingAction PendingAction
+	SharedPass    string
 }
 
 // ToJSON provides a JSON output of the contents of PendingAction
@@ -62,6 +63,10 @@ func (p PendingAction) Compare(other queue.Item) int {
 }
 
 // Compatible returns whether the server and client versions are Compatible
+//
+// cmdctrl follows semver. Patch versions are ignored.
+// Client can be minor ahead of server but not behind
+// Major version difference will automatically fail.
 func Compatible(clientVersion string, serverVersion string) bool {
 	clientV := strings.Split(clientVersion[1:], ".")
 	serverV := strings.Split(serverVersion[1:], ".")
