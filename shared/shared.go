@@ -63,8 +63,8 @@ func (p PendingAction) Compare(other queue.Item) int {
 
 // Compatible returns whether the server and client versions are Compatible
 func Compatible(clientVersion string, serverVersion string) bool {
-	clientV := strings.Split(clientVersion, ".")
-	serverV := strings.Split(serverVersion, ".")
+	clientV := strings.Split(clientVersion[1:], ".")
+	serverV := strings.Split(serverVersion[1:], ".")
 	if clientV[0] != serverV[0] {
 		return false
 	}

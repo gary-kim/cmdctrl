@@ -40,7 +40,7 @@ type Options struct {
 	RESTMode bool
 }
 
-var primaryServer RemoteServer
+var primaryServer RemoteRESTServer
 
 // RunClient runs cmdctrl in client mode
 func RunClient(addr string, opt Options) {
@@ -55,13 +55,14 @@ func RunClient(addr string, opt Options) {
 // query will query the cmdctrl server with the given url.Values. It can also be given an int for an expected status code. If the expected status code is -1, it will ignore the status code.
 func (s RemoteRESTServer) query(query url.Values, status int) (*shared.Message, error) {
 	tr := shared.Message{}
+	query.Add("client", s.clientID)
 	res, err := http.PostForm(s.addr, query)
 	if err != nil {
 		return nil, err
 	}
 	defer res.Body.Close()
 	if status != -1 && res.StatusCode != status {
-		return nil, errors.New("Unexpected http status code")
+		return nil, errors.Errorf("Unexpected http status code: %v", res.StatusCode)
 	}
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
@@ -71,7 +72,7 @@ func (s RemoteRESTServer) query(query url.Values, status int) (*shared.Message, 
 	if err != nil {
 		return nil, err
 	}
-	if shared.Compatible(cmd.Version, tr.Version) {
+	if !shared.Compatible(cmd.Version, tr.Version) {
 		return nil, errors.New("Server and client versions are incompatible")
 	}
 	return &tr, nil
@@ -79,7 +80,7 @@ func (s RemoteRESTServer) query(query url.Values, status int) (*shared.Message, 
 
 func (s RemoteRESTServer) queryCommand() (*shared.PendingAction, error) {
 	pa := &shared.PendingAction{}
-	queryReturn, err := s.query(url.Values{"client": {s.clientID}, "q": {"RequestedAction"}}, 200)
+	queryReturn, err := s.query(url.Values{"q": {"RequestedAction"}}, 200)
 	if err != nil {
 		return pa, err
 	}
@@ -96,7 +97,7 @@ func (s RemoteRESTServer) queryCommand() (*shared.PendingAction, error) {
 }
 
 // registerclient will create a client id and register the client id with the server
-func (s RemoteRESTServer) registerClient() error {
+func (s *RemoteRESTServer) registerClient() error {
 	possibleLetters := []byte("123567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 	randomB := rand.Perm(len(possibleLetters))
 	for _, curr := range randomB {
@@ -104,7 +105,7 @@ func (s RemoteRESTServer) registerClient() error {
 	}
 
 	// register with server
-	res, err := s.query(url.Values{"client": {s.clientID}, "q": {"RegisterClient"}}, 200)
+	res, err := s.query(url.Values{"q": {"RegisterClient"}}, 200)
 	if err != nil {
 		return err
 	}
@@ -118,7 +119,9 @@ func (s RemoteRESTServer) run() {
 	err := s.registerClient()
 	if err != nil {
 		fmt.Println(errors.Wrap(err, "Failed to register client"))
+		return
 	}
+	time.Sleep(1 * time.Second)
 	for {
 		pa, err := s.queryCommand()
 		if err != nil {

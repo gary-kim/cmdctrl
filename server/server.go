@@ -3,7 +3,9 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"log"
 
 	"github.com/gary-kim/cmdctrl/cmd"
 	"github.com/gary-kim/cmdctrl/shared"
@@ -27,39 +29,48 @@ func (c client) AddToQueue(pa shared.PendingAction) error {
 	return nil
 }
 
-// RunServer starts the cmdctrl server
+// Run starts the cmdctrl server
 func Run(addr string, opt Options) {
 	// start the server
-
+	http.HandleFunc("/post", handle)
+	log.Fatal(http.ListenAndServe(addr, nil))
 }
 
 func handle(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Recieved request")
 	if r.Method != "POST" {
 		http.Error(w, "Incorrect request", http.StatusForbidden)
+		fmt.Println("Incorrect Request")
 	}
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Malformed request", http.StatusBadRequest)
+		fmt.Println("Malformed Request")
 	}
 	forClient := shared.Message{
 		Version: cmd.Version,
 	}
+	fmt.Println("Checks passed")
 	clientID := r.FormValue("client")
+	fmt.Println(clientID)
+
 	switch r.FormValue("q") {
 	case "RegisterClient":
-		clients = append(clients, &client{clientID: clientID})
+		clients = append(clients, &client{clientID: clientID, queue: queue.NewPriorityQueue(1)})
+		
 		forClient.Action = "ClientRegistered"
-		tr, err := json.Marshal(forClient)
-		if err != nil {
-			http.Error(w, "Failed to format message for client", http.StatusInternalServerError)
-		}
-		w.Write(tr)
+		forClient.Success = true
+		sendToClient(forClient, w)
 		break
 	case "RequestedAction":
 		currentClient, err := getClient(clientID)
 		if err != nil {
 			http.Error(w, "Cannot find client", http.StatusInternalServerError)
+			return
 		}
 		if currentClient.queue.Empty() {
+			forClient.Action = "NoAction"
+			forClient.Success = true
+			sendToClient(forClient, w)
 			return
 		}
 		pendingAction, err := currentClient.queue.Get(1)
@@ -69,6 +80,15 @@ func handle(w http.ResponseWriter, r *http.Request) {
 		forClient.PendingAction = pendingAction[0].(shared.PendingAction)
 
 	}
+}
+
+func sendToClient(forClient shared.Message, w http.ResponseWriter) {
+	tr, err := json.Marshal(forClient)
+	if err != nil {
+		http.Error(w, "Failed to format message for client", http.StatusInternalServerError)
+	}
+	w.WriteHeader(200)
+	w.Write(tr)
 }
 
 func getClient(clientID string) (*client, error) {
