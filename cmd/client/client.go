@@ -11,6 +11,7 @@ func init() {
 	RESTMode := false
 	RESTUpdateInterval := 60
 	sharedPass := ""
+	logLocation := "cmdctrl.log"
 
 	clientCmd := &cobra.Command{
 		Use:   "client",
@@ -26,6 +27,7 @@ and follow its instructions`,
 				RESTMode:           RESTMode,
 				RESTUpdateInterval: RESTUpdateInterval,
 				SharedPass:         sharedPass,
+				LogFile:            logLocation,
 			})
 		},
 	}
@@ -35,5 +37,6 @@ and follow its instructions`,
 	clientCmd.PersistentFlags().BoolVar(&RESTMode, "rest-mode", false, "Contact the server with RESTful HTTP requests rather than using a websocket connection.")
 	clientCmd.PersistentFlags().IntVar(&RESTUpdateInterval, "rest-update-interval", 60, "How often to query the server for updates when in rest mode")
 	clientCmd.PersistentFlags().StringVar(&sharedPass, "shared-pass", "", "A shared pass for the server and client. Must be the same between the server and client. This is used by the client to authenticate the server.")
+	clientCmd.PersistentFlags().StringVar(&logLocation, "log-file", "cmdctrl.log", "Specify a location in which to save cmdctrl client's logs")
 
 }

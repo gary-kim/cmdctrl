@@ -40,3 +40,8 @@ var ControlUITemplate = `
 </body>
 </html>
 `
+
+// LogViewTemplate is the web code for viewing logs
+var LogViewTemplate = `
+
+`

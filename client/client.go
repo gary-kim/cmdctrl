@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"time"
 
@@ -43,6 +44,7 @@ type Options struct {
 	RESTMode           bool
 	RESTUpdateInterval int
 	SharedPass         string
+	LogFile            string
 }
 
 var primaryServer RemoteRESTServer
@@ -125,17 +127,21 @@ func (s *RemoteRESTServer) registerClient() error {
 }
 
 func (s RemoteRESTServer) run() {
+	f, _ := os.Create(s.opt.LogFile)
+	defer f.Close()
 	err := s.registerClient()
 	if err != nil {
 		fmt.Println(errors.Wrap(err, "Failed to register client"))
 		return
 	}
 	fmt.Printf("Client successfully registered with ID: %s\n", s.clientID)
+	fmt.Fprintf(f, "Client successfully registered with ID: %s\n", s.clientID)
 	time.Sleep(1 * time.Second)
 	for {
 		pa, err := s.queryCommand()
 		if err != nil {
 			fmt.Printf("Could not query for command from server: %s", err)
+			fmt.Fprintf(f, "Could not query for command from server: %s", err)
 		}
 		pa.Run(s.addr)
 
