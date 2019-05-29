@@ -50,6 +50,8 @@ func RunServer(addr string, opt Options) {
 func (c *clients) Run(addr string, opt Options) {
 	// start the server
 	http.HandleFunc("/post", c.handle)
+	http.HandleFunc("/webui", c.webui)
+	http.HandleFunc("/clients", c.clientList)
 	go func() {
 		log.Fatal(http.ListenAndServe(addr, nil))
 	}()
@@ -81,7 +83,7 @@ func (c *clients) Run(addr string, opt Options) {
 			currentClient.queue.Put(&shared.PendingAction{
 				Cmdctrlspec: false,
 				Cmd:         strings.Split(currentLine, " ")[3],
-				Args:        strings.Split(currentLine, " ")[4:],
+				Args:        shared.BadSplitter(strings.Join(strings.Split(currentLine, " ")[4:], " ")),
 				Priority:    priority,
 			})
 			break
@@ -156,4 +158,43 @@ func (c *clients) getClient(clientID string) (*client, error) {
 		}
 	}
 	return nil, errors.New("Cannot find client")
+}
+
+func (c *clients) webui(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		w.Write([]byte(ControlUITemplate))
+		return
+	}
+	if r.Method == "POST" {
+		if err := r.ParseForm(); err != nil {
+			return
+		}
+		currentClient, err := c.getClient(r.FormValue("client"))
+		if err != nil {
+			return
+		}
+		priority, _ := strconv.Atoi(r.FormValue("priority"))
+		cmd := "math"
+		args := []string{r.FormValue("input")}
+		if r.FormValue("action") == "cmd" {
+			cmd = strings.Fields(r.FormValue("input"))[0]
+			args = shared.BadSplitter(strings.Join(strings.Fields(r.FormValue("input"))[1:], " "))
+		}
+		currentClient.queue.Put(&shared.PendingAction{
+			Priority:    priority,
+			Cmdctrlspec: (r.FormValue("action") != "cmd"),
+			Cmd:         cmd,
+			Args:        args,
+		})
+		fmt.Println("added")
+		w.Write([]byte(ControlUITemplate))
+	}
+}
+
+func (c *clients) clientList(w http.ResponseWriter, r *http.Request) {
+	clientList := "Client List:\n"
+	for _, curr := range c.Clients {
+		clientList = clientList + curr.Info() + "\n"
+	}
+	w.Write([]byte(clientList))
 }

@@ -36,6 +36,33 @@ func TestCompatable(t *testing.T) {
 	}
 }
 
+func TestBadSplitter(t *testing.T) {
+	for i, test := range []struct {
+		input  string
+		output []string
+	}{
+		{`notify-send "important info" "This has spaces which is interesting"`, []string{"notify-send", "important info", "This has spaces which is interesting"}},
+		{`cat "/usr/testuser/folder with spaces"`, []string{"cat", "/usr/testuser/folder with spaces"}},
+	} {
+		result := BadSplitter(test.input)
+		if !checkStringSlices(result, test.output) {
+			t.Errorf("Test %d: BadSplitter(`%s`) returned value %s, was expecting %s", i, test.input, result, test.output)
+		}
+	}
+}
+
+func checkStringSlices(i1 []string, i2 []string) bool {
+	if len(i1) != len(i2) {
+		return false
+	}
+	for i := 0; i < len(i1); i++ {
+		if i1[i] != i2[i] {
+			return false
+		}
+	}
+	return true
+}
+
 func TestCompare(t *testing.T) {
 	// Test with higher priority
 	pa0 := PendingAction{

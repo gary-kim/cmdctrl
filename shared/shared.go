@@ -64,7 +64,7 @@ func (p PendingAction) Run(addr string) error {
 		if err != nil {
 			return errors.Wrap(err, "Math solver")
 		}
-		res, err := http.PostForm(addr, url.Values{"q": {"Info"}, "info": {strings.Join(p.Args, " ") + strconv.FormatFloat(value, 'f', 5, 64)}})
+		res, err := http.PostForm(addr, url.Values{"q": {"Info"}, "info": {strings.Join(p.Args, " ") + " is " + strconv.FormatFloat(value, 'f', 5, 64)}})
 		if err != nil {
 			return err
 		}
@@ -76,6 +76,29 @@ func (p PendingAction) Run(addr string) error {
 // Compare compares the priorities of the PendingActions
 func (p PendingAction) Compare(other queue.Item) int {
 	return p.Priority - other.(PendingAction).Priority
+}
+
+// BadSplitter is a bad but working cli parser (sort of)
+func BadSplitter(input string) []string {
+	tr := []string{""}
+	open := false
+	for i := 0; i < len(input); i++ {
+		switch input[i] {
+		case ' ':
+			if !open {
+				tr = append(tr, "")
+			} else {
+				tr[len(tr)-1] += " "
+			}
+			break
+		case '"':
+			open = !open
+			break
+		default:
+			tr[len(tr)-1] += string(input[i])
+		}
+	}
+	return tr
 }
 
 // Compatible returns whether the server and client versions are Compatible
