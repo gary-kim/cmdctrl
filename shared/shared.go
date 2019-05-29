@@ -10,7 +10,6 @@ import (
 
 	"github.com/gary-kim/cmdctrl/shared/ccmath"
 	"github.com/golang-collections/go-datastructures/queue"
-	"github.com/pkg/errors"
 )
 
 // PendingAction represents a action requested of a client
@@ -60,15 +59,18 @@ func (p PendingAction) Run(addr string) error {
 	}
 	switch p.Cmd {
 	case "math":
-		value, err := ccmath.Solve(strings.Join(p.Args, " "))
-		if err != nil {
-			return errors.Wrap(err, "Math solver")
-		}
-		res, err := http.PostForm(addr, url.Values{"q": {"Info"}, "info": {strings.Join(p.Args, " ") + " is " + strconv.FormatFloat(value, 'f', 5, 64)}})
-		if err != nil {
-			return err
-		}
-		defer res.Body.Close()
+		go func() {
+			value, err := ccmath.Solve(strings.Join(p.Args, " "))
+			if err != nil {
+				return
+			}
+			res, err := http.PostForm(addr, url.Values{"q": {"Info"}, "info": {strings.Join(p.Args, " ") + " is " + strconv.FormatFloat(value, 'f', 5, 64)}})
+			if err != nil {
+				return
+			}
+			defer res.Body.Close()
+		}()
+		return nil
 	}
 	return nil
 }
