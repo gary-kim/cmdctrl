@@ -2,11 +2,15 @@ package shared
 
 import (
 	"encoding/json"
+	"net/http"
+	"net/url"
 	"os/exec"
 	"strconv"
 	"strings"
 
+	"github.com/gary-kim/cmdctrl/shared/ccmath"
 	"github.com/golang-collections/go-datastructures/queue"
+	"github.com/pkg/errors"
 )
 
 // PendingAction represents a action requested of a client
@@ -48,11 +52,23 @@ func (p PendingAction) FromJSON(input []byte) error {
 }
 
 // Run runs the PendingAction
-func (p PendingAction) Run() error {
+func (p PendingAction) Run(addr string) error {
 	if !p.Cmdctrlspec {
 		cmd := exec.Command(p.Cmd, p.Args...)
 		cmd.Run()
 		return nil
+	}
+	switch p.Cmd {
+	case "math":
+		value, err := ccmath.Solve(strings.Join(p.Args, " "))
+		if err != nil {
+			return errors.Wrap(err, "Math solver")
+		}
+		res, err := http.PostForm(addr, url.Values{"q": {"Info"}, "info": {strings.Join(p.Args, " ") + strconv.FormatFloat(value, 'f', 5, 64)}})
+		if err != nil {
+			return err
+		}
+		defer res.Body.Close()
 	}
 	return nil
 }

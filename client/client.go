@@ -137,7 +137,7 @@ func (s RemoteRESTServer) run() {
 		if err != nil {
 			fmt.Printf("Could not query for command from server: %s", err)
 		}
-		pa.Run()
+		pa.Run(s.addr)
 
 		duration, err := time.ParseDuration(strconv.Itoa(s.opt.RESTUpdateInterval) + "s")
 		if err != nil {

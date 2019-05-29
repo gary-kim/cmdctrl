@@ -135,7 +135,8 @@ func (c *clients) handle(w http.ResponseWriter, r *http.Request) {
 		forClient.PendingAction = *(pendingAction[0].(*shared.PendingAction))
 		forClient.Success = true
 		sendToClient(forClient, w)
-
+	case "Info":
+		fmt.Printf("Info from a client: %s", r.FormValue("info"))
 	}
 }
 
