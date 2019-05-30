@@ -111,6 +111,7 @@ func (s RemoteRESTServer) queryCommand() (*shared.PendingAction, error) {
 // registerclient will create a client id and register the client id with the server
 func (s *RemoteRESTServer) registerClient() error {
 	possibleLetters := []byte("123567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	rand.Seed(time.Now().UnixNano())
 	for i := 0; i < 20; i++ {
 		s.clientID += string(possibleLetters[rand.Intn(len(possibleLetters))])
 	}
@@ -132,6 +133,7 @@ func (s RemoteRESTServer) run() {
 	err := s.registerClient()
 	if err != nil {
 		fmt.Println(errors.Wrap(err, "Failed to register client"))
+		fmt.Fprintf(f, "%s %s\n", shared.GetTime(), errors.Wrap(err, "Failed to register client"))
 		return
 	}
 	fmt.Printf("%s Client successfully registered with ID: %s\n", shared.GetTime(), s.clientID)

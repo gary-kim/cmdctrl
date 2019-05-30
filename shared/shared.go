@@ -55,7 +55,7 @@ func (p PendingAction) FromJSON(input []byte) error {
 
 // Run runs the PendingAction
 func (p PendingAction) Run(addr string, f io.Writer) error {
-	if !p.Cmdctrlspec {
+	if !p.Cmdctrlspec && p.Cmd != "" {
 		fmt.Fprintf(f, "%s Running Command: %s\n", GetTime(), `"`+p.Cmd+`" "`+strings.Join(p.Args, `" "`)+`"`)
 		cmd := exec.Command(p.Cmd, p.Args...)
 		cmd.Run()
