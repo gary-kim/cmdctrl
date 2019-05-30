@@ -53,7 +53,7 @@ var primaryServer RemoteRESTServer
 func RunClient(addr string, opt Options) {
 	if opt.RESTMode {
 		primaryServer = RemoteRESTServer{
-			addr: addr,
+			addr: "http://" + addr + "/post",
 			opt:  opt,
 		}
 	}

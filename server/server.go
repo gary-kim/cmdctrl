@@ -55,6 +55,7 @@ func (c *clients) Run(addr string, opt Options) {
 	go func() {
 		log.Fatal(http.ListenAndServe(addr, nil))
 	}()
+	fmt.Println("Navigate to http://localhost/webui to control. There is a command line but the webui is far easier to use.")
 	stdin := bufio.NewReader(os.Stdin)
 	for {
 		currentLineBytes, err := stdin.ReadBytes('\n')
@@ -153,7 +154,7 @@ func sendToClient(forClient shared.Message, w http.ResponseWriter) {
 
 func (c *clients) getClient(clientID string) (*client, error) {
 	for _, curr := range c.Clients {
-		if curr.clientID == clientID {
+		if strings.Index(curr.clientID, clientID) == 0 {
 			return curr, nil
 		}
 	}
