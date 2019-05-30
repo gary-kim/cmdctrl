@@ -9,6 +9,12 @@ var ControlUITemplate = `
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>cmdctrl webui</title>
+    <style>
+        input {
+            height: 2em;
+            background: white;
+        }
+    </style>
 </head>
 <body>
     <div>
@@ -24,15 +30,14 @@ var ControlUITemplate = `
             <br>
                 <label>Priority: <input type="number" name="priority" id="input-priority"></label><br>
                 <label>Client: <input type="text" name="client" id="input-client"></label><br>
-                <label>cmd: <input type="text" name="input" id="input-input"></label>
+                <label>cmd: <input type="text" name="input" id="input-input"></label><br>
             <input type="submit" value="submit">
         </form>
     </div>
     <script>
-        let clients_dom = document.querySelector("#clients");
         async function loadClients() {
             let list = await (await fetch('/clients')).text();
-            clients_dom.innerText = list;
+            document.querySelector("#clients").innerText = list;
         }
         loadClients();
         setTimeout(loadClients, 1000);
