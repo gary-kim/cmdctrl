@@ -25,6 +25,6 @@ to this system to recieve commands`,
 		},
 	}
 	cmd.Root.AddCommand(serverCmd)
-	serverCmd.PersistentFlags().StringVar(&address, "addr", "localhost:80", "Indicates the address you would like the cmdctrl server to bind to")
+	serverCmd.PersistentFlags().StringVar(&address, "addr", ":80", "Indicates the address you would like the cmdctrl server to bind to. Use (:port) to specify just a port for a full (host:addr) for the entire bind address")
 	serverCmd.PersistentFlags().StringVar(&sharedPass, "shared-pass", "", "A shared pass for the server and client. Must be the same between the server and client. This is used by the client to authenticate the server.")
 }

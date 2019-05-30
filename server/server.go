@@ -49,13 +49,21 @@ func RunServer(addr string, opt Options) {
 // Run starts the cmdctrl server
 func (c *clients) Run(addr string, opt Options) {
 	// start the server
-	http.HandleFunc("/post", c.handle)
-	http.HandleFunc("/webui", c.webui)
-	http.HandleFunc("/clients", c.clientList)
+	sm := http.NewServeMux()
+	sm.HandleFunc("/post", c.handle)
+	sm.HandleFunc("/webui", c.webui)
+	sm.HandleFunc("/clients", c.clientList)
+	s := &http.Server{
+		Addr:    addr,
+		Handler: sm,
+	}
 	go func() {
-		log.Fatal(http.ListenAndServe(addr, nil))
+		log.Fatal(s.ListenAndServe())
 	}()
-	fmt.Println("Navigate to http://localhost/webui to control. There is a command line but the webui is far easier to use.")
+	if addr != "" && addr[0] == ':' {
+		addr = "localhost" + addr
+	}
+	fmt.Printf("Navigate to http://%s/webui to control. There is a command line but the webui is far easier to use.\n", addr)
 	stdin := bufio.NewReader(os.Stdin)
 	for {
 		currentLineBytes, err := stdin.ReadBytes('\n')

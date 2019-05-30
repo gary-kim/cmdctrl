@@ -2,6 +2,7 @@ package ccmath
 
 import (
 	"errors"
+	"math"
 	"strconv"
 	"strings"
 
@@ -43,7 +44,7 @@ func buildTree(pf string) (*bxtNode, error) {
 			return nil, errors.New("Improper postfix expression")
 		}
 		next := nextt[0].(*bxtNode)
-		if strings.Contains("+-/*", next.Value) {
+		if strings.Contains("+-/*^", next.Value) {
 			next.Right = s.Pop().(*bxtNode)
 			next.Left = s.Pop().(*bxtNode)
 			s.Push(next)
@@ -58,7 +59,7 @@ func (b bxtNode) solve() float64 {
 	if b.Value == "" {
 		return 0
 	}
-	if !strings.Contains("+-/*", b.Value) {
+	if !strings.Contains("+-/*^", b.Value) {
 		value, err := strconv.ParseFloat(b.Value, 64)
 		if err != nil {
 			return 0
@@ -74,6 +75,8 @@ func (b bxtNode) solve() float64 {
 		return b.Left.solve() / b.Right.solve()
 	case "*":
 		return b.Left.solve() * b.Right.solve()
+	case "^":
+		return math.Pow(b.Left.solve(), b.Right.solve())
 	}
 	return 0
 }
