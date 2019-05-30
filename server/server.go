@@ -174,7 +174,10 @@ func (c *clients) webui(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return
 		}
-		priority, _ := strconv.Atoi(r.FormValue("priority"))
+		priority, err := strconv.Atoi(r.FormValue("priority"))
+		if err != nil {
+			priority = 0
+		}
 		cmd := "math"
 		args := []string{r.FormValue("input")}
 		if r.FormValue("action") == "cmd" {

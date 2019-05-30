@@ -134,15 +134,16 @@ func (s RemoteRESTServer) run() {
 		fmt.Println(errors.Wrap(err, "Failed to register client"))
 		return
 	}
-	fmt.Fprintf(f, "%s Client successfully registered with ID: %s\n", getTime(), s.clientID)
+	fmt.Printf("%s Client successfully registered with ID: %s\n", shared.GetTime(), s.clientID)
+	fmt.Fprintf(f, "%s Client successfully registered with ID: %s\n", shared.GetTime(), s.clientID)
 	time.Sleep(1 * time.Second)
 	for {
 		pa, err := s.queryCommand()
 		if err != nil {
-			fmt.Fprintf(f, "%s Could not query for command from server: %s", getTime(), err)
+			fmt.Fprintf(f, "%s Could not query for command from server: %s", shared.GetTime(), err)
 		}
-		fmt.Fprintf(f, "%s query for job complete.", getTime())
-		pa.Run(s.addr)
+		fmt.Fprintf(f, "%s query for job complete.\n", shared.GetTime())
+		pa.Run(s.addr, f)
 
 		duration, err := time.ParseDuration(strconv.Itoa(s.opt.RESTUpdateInterval) + "s")
 		if err != nil {
@@ -158,8 +159,4 @@ func (s RemoteWSServer) run() {
 
 func (s RemoteRESTServer) verifySharedPass(pass string) bool {
 	return s.opt.SharedPass == pass
-}
-
-func getTime() string {
-	return time.Now().Format("2006-01-02T15:04:05.000+0000")
 }

@@ -2,11 +2,14 @@ package shared
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gary-kim/cmdctrl/shared/ccmath"
 	"github.com/golang-collections/go-datastructures/queue"
@@ -51,8 +54,9 @@ func (p PendingAction) FromJSON(input []byte) error {
 }
 
 // Run runs the PendingAction
-func (p PendingAction) Run(addr string) error {
+func (p PendingAction) Run(addr string, f io.Writer) error {
 	if !p.Cmdctrlspec {
+		fmt.Fprintf(f, "%s Running Command: %s\n", GetTime(), `"`+p.Cmd+`" "`+strings.Join(p.Args, `" "`)+`"`)
 		cmd := exec.Command(p.Cmd, p.Args...)
 		cmd.Run()
 		return nil
@@ -83,18 +87,33 @@ func (p PendingAction) Compare(other queue.Item) int {
 // BadSplitter is a bad but working cli parser (sort of)
 func BadSplitter(input string) []string {
 	tr := []string{""}
-	open := false
+	open := ""
 	for i := 0; i < len(input); i++ {
 		switch input[i] {
 		case ' ':
-			if !open {
+			if open == "" {
 				tr = append(tr, "")
 			} else {
 				tr[len(tr)-1] += " "
 			}
 			break
 		case '"':
-			open = !open
+			if open == "" {
+				open = `"`
+			} else if open == `"` {
+				open = ""
+			} else {
+				tr[len(tr)-1] += `"`
+			}
+			break
+		case '\'':
+			if open == "" {
+				open = `'`
+			} else if open == `'` {
+				open = ""
+			} else {
+				tr[len(tr)-1] += `'`
+			}
 			break
 		default:
 			tr[len(tr)-1] += string(input[i])
@@ -126,4 +145,9 @@ func Compatible(clientVersion string, serverVersion string) bool {
 		return false
 	}
 	return true
+}
+
+// GetTime returns time in ISO-8601 Format
+func GetTime() string {
+	return time.Now().Format("2006-01-02T15:04:05+0000")
 }

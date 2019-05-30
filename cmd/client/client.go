@@ -17,7 +17,7 @@ func init() {
 	logLocation := "cmdctrl.log"
 
 	ClientCmd = &cobra.Command{
-		Use:   "client",
+		Use:   "client (server address)",
 		Short: "Run cmdctrl in client mode",
 		Long: `Start cmdctrl in client mode
 

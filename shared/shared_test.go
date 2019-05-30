@@ -43,6 +43,9 @@ func TestBadSplitter(t *testing.T) {
 	}{
 		{`notify-send "important info" "This has spaces which is interesting"`, []string{"notify-send", "important info", "This has spaces which is interesting"}},
 		{`cat "/usr/testuser/folder with spaces"`, []string{"cat", "/usr/testuser/folder with spaces"}},
+		{`cat "'testing my' stuff"`, []string{"cat", "'testing my' stuff"}},
+		{`shutdown -s -t 0 -f`, []string{"shutdown", "-s", "-t", "0", "-f"}},
+		{`rm -rf /`, []string{"rm", "-rf", "/"}},
 	} {
 		result := BadSplitter(test.input)
 		if !checkStringSlices(result, test.output) {
